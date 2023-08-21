@@ -6,8 +6,29 @@ info:
   description: API REST para que los proveedores puedan informar sus presupuestos
     para el grupo Epysa y tambien para que puedan revisar su estado.
 paths:
-  /presupuestos/{proveedor}: {}
-  /presupuestos/{proveedor}/{id}:
+  /presupuestos/{proveedor}:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/presupuestoItem'
+          description: OK
+      summary: obtenerPresupuestos
+      description: Obtiene todos los presupuestos del proveedor ingresados al sistema
+    parameters:
+    - examples:
+        ejemplo:
+          value: 123456799K
+      name: proveedor
+      schema:
+        type: string
+      in: path
+      required: true
+  /presupuestos/{proveedor}/{idProveedor}:
     get:
       responses:
         "200":
@@ -15,9 +36,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/presupuesto'
-          description: Informacion existente
+          description: OK
       summary: obtenerPresupuesto
       description: Obtiene el detalle del presupuesto segun la ID o numero de presupuesto
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/presupuesto'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: integer
+              examples:
+                ejemplo OK:
+                  value:
+                    idProveedor: 190
+          description: OK
+      summary: ingresarPresupuesto
+      description: Ingresa un nuevo presupuesto. Devuelve el Id numero de presupuesto
+        del proveedor si fue exitosamente creado
     parameters:
     - examples:
         ejemplo RUT:
@@ -31,7 +73,7 @@ paths:
     - examples:
         numero de presupuesto del proveedor:
           value: "95660"
-      name: id
+      name: idProveedor
       description: Numero del presupuesto. Identificador que genera el proveedor.
       schema:
         type: number
@@ -46,29 +88,29 @@ components:
       - responsable
       - detalle
       - empresaEpysa
-      - idProveedor
       type: object
       properties:
-        idProveedor:
-          type: integer
         estado:
-          description: "String de largo 3 que indica el estado actual del presupuesto,\
-            \ al ser creadas no es necesario"
+          description: String de largo 3 que indica el estado actual del presupuesto
           type: string
           readOnly: true
         totalPesos:
-          type: integer
-        idActivo:
-          type: string
-        kilometrajeActivo:
+          description: Total en pesos sin iva.
           type: integer
         empresaEpysa:
-          description: "Empresa del holding Epysa, que puede ser: ServiBus, EpysaBuses,\
-            \ MundoBuses, EpysaEquipos, Service."
+          description: "Rut empresa del holding Epysa (cliente), que puede ser: 763519872,\
+            \ 778248700, 778690403, 776762806, 76700320K, o sus respectivos identificadores:\
+            \  ServiBus, EpysaBuses, MundoBuses, EpysaEquipos, Service."
           type: string
         otEpysa:
+          description: Número de OT de Epysa. OT interna de epysa que mandata el trabajo
           type: integer
         imagenes:
+          description: "Lista de las URL de las imagenes asociadas a la cabecera del\
+            \ presupuesto. Las URL deben ser públicas. El sistema de Epysa bajará\
+            \ una copia de esta imagen a los servidores propios una vez aceptado el\
+            \ presupuesto.\nPermite JPG, PNG, PDF. \nPreferir el listado de imagenes\
+            \ en el detalle en vez de este.\n"
           type: array
           items:
             type: string
@@ -76,6 +118,7 @@ components:
           type: string
         detalle:
           $ref: '#/components/schemas/detallePresupuesto'
+          description: Detalle (items) del presupuesto
           properties:
             idProducto:
               type: string
@@ -94,31 +137,52 @@ components:
             observacion:
               type: string
         responsable:
-          description: Usuario responsable del trabajo o creador del documento
+          description: "Usuario responsable del trabajo o creador del documento. Usar\
+            \ un identificador como rut, userName o email. "
           type: string
         ordenCompra:
-          description: Informacion de la OC Epysa
+          description: Información de la OC Epysa
           type: integer
           readOnly: true
         factura:
-          description: Informacion de la Factura. No debe informarse en esta API.
+          description: Número de factura del proveedor
           type: integer
           readOnly: true
+        receptor:
+          description: "Rut del receptor Epysa. Deprecar debido a que una vez ingresada\
+            \ a esta API, la validación será interna."
+          type: string
+        kilometrajeVehiculo:
+          description: Kilometraje que tiene el vehículo al realizar el presupuesto.
+          type: integer
+        chasis:
+          description: Identificador del chasis vehiculo que se le realizará el trabajo
+          type: string
+        carroceria:
+          description: Identificador de la carrocería del vehiculo que se le realizará
+            el trabajo
+          type: string
+        fechaCreado:
+          format: date-time
+          description: Fecha de creación del o emisón del documento origen del proveedor
+          type: string
       example:
-        idProveedor: 1
         estado: INI
         totalPesos: 100000
         idActivo: ABC7110
-        kilometrajeActivo: 20000
+        kilometrajeVehiculo: 20000
         empresaEpysa: ServiBus
         otEpysa: 9991
+        receptor: "251751021"
+        responsable: jperez
+        fechaCreado: 2013-10-21T13:28:06.419Z
+        observacion: Observación o glosa
         imagenes:
-        - https://urlproveedor/1099
+        - https://urlproveedor/presupuestoFormatoProveedor.pdf
         - https://urlproveedor/1100
-        observacion: Observacion o glosa
         detalle:
           idProducto: A103
-          nombreProducto: Reparacion Menor Carenado
+          nombreProducto: Reparación Menor Carenado
           cantidad: 1
           valorUnitario: 100000
           imagenes:
@@ -131,16 +195,20 @@ components:
       type: object
       properties:
         idProducto:
+          description: Identificador único del producto
           type: string
         nombreProducto:
           type: string
         cantidad:
-          format: int32
           type: integer
         valorUnitario:
-          format: int32
+          description: Valor unitario sin iva en pesos
           type: integer
         imagenes:
+          description: "Lista de las URL de las imagenes asociadas al detalle. Las\
+            \ URL deben ser públicas. El sistema de Epysa bajará una copia de esta\
+            \ imagen a los servidores propios una vez aceptado el presupuesto.\nPermite\
+            \ JPG, PNG, PDF. "
           type: array
           items:
             type: string
@@ -154,4 +222,73 @@ components:
         imagenes:
         - https://urlproveedor/detalle1.png
         - https://urlproveedor/detalle2.jpg
-        observacion: Observacion detallada
+        observacion: Observación detallada
+    presupuestoItem:
+      title: Root Type for presupuestoItem
+      description: Item de presupuesto en Lista
+      type: object
+      properties:
+        estado:
+          description: "String de largo 3 que indica el estado actual del presupuesto,\
+            \ al ser creadas no es necesario informar este dato. Inicialmente seria\
+            \ INI para ingresada, EVA para estado de evaluacion de aceptacion, y AUT\
+            \ para Autorizada. "
+          type: string
+        totalPesos:
+          description: Usuario responsable del trabajo o creador del documento.
+          type: integer
+        empresaEpysa:
+          description: "Empresa del holding Epysa, que puede ser: ServiBus, EpysaBuses,\
+            \ MundoBuses, EpysaEquipos, Service."
+          type: string
+        otEpysa:
+          description: Número de OT de Epysa. OT interna de epysa que mandata el trabajo.
+          type: integer
+        responsable:
+          description: Usuario responsable del trabajo o creador del documento.
+          type: string
+        observacion:
+          type: string
+        factura:
+          description: Número de la factura del proveedor
+          type: integer
+        ordenCompra:
+          description: Número de la OC generada por Epysa
+          type: integer
+        fechaIngreso:
+          format: date-time
+          description: Fecha de ingreso del presupuesto al sistema epysa
+          type: string
+        carroceria:
+          description: Identificador de la carrocería del vehículo al que se le realizará
+            el trabajo
+          type: string
+        chasis:
+          description: 'Identificador del chasis del vehículo en que se realizará
+            el trabajo. '
+          type: string
+        kilometrajeVehiculo:
+          description: Kilometraje que tiene el vehículo al realizar el presupuesto.
+          type: integer
+        receptor:
+          description: "Rut del receptor Epysa. Deprecar debido a que una vez ingresada\
+            \ a esta API, la validación será interna."
+          type: string
+        fechaCreado:
+          format: date-time
+          description: Fecha de creación del o emisón del documento origen del proveedor
+          type: string
+      example:
+        estado: INI
+        totalPesos: 100000
+        carroceria: ABC7110
+        kilometrajeVehiculo: 20000
+        empresaEpysa: ServiBus
+        otEpysa: 9991
+        receptor: "251751021"
+        responsable: jperez
+        observacion: Observación o glosa
+        factura: 102
+        ordenCompra: 20024
+        fechaCreado: 2013-10-21T13:28:06.419Z
+        fechaIngreso: 2013-10-21T13:28:07.347Z
