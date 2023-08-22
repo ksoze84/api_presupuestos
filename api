@@ -29,6 +29,13 @@ paths:
         type: string
       in: path
       required: true
+    - name: EPYSA-KEY
+      description: "API key, permite ver e ingresar los presupuestos asociados a un\
+        \ solo proveedor."
+      schema:
+        type: string
+      in: header
+      required: true
   /presupuestos/{proveedor}/{idPresupuesto}:
     get:
       responses:
@@ -46,6 +53,28 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/presupuesto'
+            examples:
+              ejemploA:
+                value:
+                  clasificacion: ser
+                  kilometrajeVehiculo: 20000
+                  empresaEpysa: ServiBus
+                  otEpysa: 9991
+                  responsable: jperez
+                  fechaCreado: 2013-10-21T13:28:06.419Z
+                  observacion: Observación o glosa
+                  imagenes:
+                  - https://urlproveedor/presupuestoFormatoProveedor.pdf
+                  - https://urlproveedor/1100
+                  detalle:
+                    idProducto: A103
+                    nombreProducto: Reparación Menor Carenado
+                    cantidad: 1
+                    valorUnitario: 100000
+                    imagenes:
+                    - https://urlproveedor/detalle1.png
+                    - https://urlproveedor/detalle2.jpg
+                    observacion: Observacion detallada
         required: true
       responses:
         "200":
@@ -59,8 +88,10 @@ paths:
                     idProveedor: 190
           description: OK
       summary: ingresarPresupuesto
-      description: Ingresa un nuevo presupuesto. Devuelve el Id numero de presupuesto
-        del proveedor si fue exitosamente creado
+      description: 'Ingresa un nuevo presupuesto. Devuelve el Id numero de presupuesto
+        del proveedor si fue exitosamente creado. Debiese registrarse apenas el proveedor
+        emite el documento o al mismo tiempo que envia por correo su OT o Parte de
+        Trabajo. '
     parameters:
     - examples:
         ejemplo RUT:
@@ -80,6 +111,13 @@ paths:
         type: number
       in: path
       required: true
+    - name: EPYSA-KEY
+      description: "API key, permite ver e ingresar los presupuestos asociados a un\
+        \ solo proveedor."
+      schema:
+        type: string
+      in: header
+      required: true
 components:
   schemas:
     presupuesto:
@@ -93,7 +131,9 @@ components:
       type: object
       properties:
         estado:
-          description: String de largo 3 que indica el estado actual del presupuesto
+          description: "String de largo 3 que indica el estado actual del presupuesto.\
+            \ INI para ingresada, EVA para estado de evaluacion de aceptacion, AUT\
+            \ para Autorizada, y REC para rechazada. "
           type: string
           readOnly: true
         totalPesos:
@@ -123,8 +163,10 @@ components:
         observacion:
           type: string
         detalle:
-          $ref: '#/components/schemas/detallePresupuesto'
           description: Detalle (items) del presupuesto
+          type: array
+          items:
+            $ref: '#/components/schemas/detallePresupuesto'
           properties:
             idProducto:
               type: string
@@ -162,7 +204,7 @@ components:
           description: Kilometraje que tiene el vehículo al realizar el presupuesto.
           type: integer
         chasis:
-          description: Identificador del chasis vehiculo que se le realizará el trabajo
+          description: Identificador del chasis vehículo que se le realizará el trabajo
           type: string
           readOnly: true
         carroceria:
@@ -181,7 +223,7 @@ components:
       example:
         estado: INI
         totalPesos: 100000
-        idActivo: ABC7110
+        clasificacion: ser
         kilometrajeVehiculo: 20000
         empresaEpysa: ServiBus
         otEpysa: 9991
@@ -204,10 +246,15 @@ components:
     detallePresupuesto:
       title: Root Type for detallePresupuesto
       description: Detalle (items) del presupuesto
+      required:
+      - cantidad
+      - idProducto
+      - nombreProducto
       type: object
       properties:
         idProducto:
-          description: Identificador único del producto
+          description: Identificador único del producto. También puede ser un identificador
+            universal para denotar HH.
           type: string
         nombreProducto:
           type: string
@@ -242,9 +289,9 @@ components:
       properties:
         estado:
           description: "String de largo 3 que indica el estado actual del presupuesto,\
-            \ al ser creadas no es necesario informar este dato. Inicialmente seria\
-            \ INI para ingresada, EVA para estado de evaluacion de aceptacion, y AUT\
-            \ para Autorizada. "
+            \ al ser creadas no es necesario informar este dato. INI para ingresada,\
+            \ EVA para estado de evaluacion de aceptacion, AUT para Autorizada, y\
+            \ REC para rechazada. "
           type: string
         totalPesos:
           description: Usuario responsable del trabajo o creador del documento.
@@ -287,10 +334,18 @@ components:
           description: Clasificación de los trabajos. Permitirá agregar un parametrización
             a la lista de precios.
           type: string
+        carroceria:
+          description: número de carrocería del vehículo
+          type: string
+        chasis:
+          description: número de chasis del vehículo
+          type: string
       example:
         estado: INI
+        clasificacion: ser
         totalPesos: 100000
         carroceria: ABC7110
+        chasis: 15971-0333
         kilometrajeVehiculo: 20000
         empresaEpysa: ServiBus
         otEpysa: 9991
