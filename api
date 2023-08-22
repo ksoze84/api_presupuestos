@@ -24,11 +24,12 @@ paths:
         ejemplo:
           value: 123456799K
       name: proveedor
+      description: RUT del proveedor sin puntos y sin guion. Incluir dígito verificador
       schema:
         type: string
       in: path
       required: true
-  /presupuestos/{proveedor}/{idProveedor}:
+  /presupuestos/{proveedor}/{idPresupuesto}:
     get:
       responses:
         "200":
@@ -65,7 +66,7 @@ paths:
         ejemplo RUT:
           value: 123456799K
       name: proveedor
-      description: RUT del proveedor sin puntos y sin guion. Incluir digito verificador
+      description: RUT del proveedor sin puntos y sin guion. Incluir dígito verificador
       schema:
         type: string
       in: path
@@ -73,7 +74,7 @@ paths:
     - examples:
         numero de presupuesto del proveedor:
           value: "95660"
-      name: idProveedor
+      name: idPresupuesto
       description: Numero del presupuesto. Identificador que genera el proveedor.
       schema:
         type: number
@@ -88,6 +89,7 @@ components:
       - responsable
       - detalle
       - empresaEpysa
+      - otEpysa
       type: object
       properties:
         estado:
@@ -97,13 +99,17 @@ components:
         totalPesos:
           description: Total en pesos sin iva.
           type: integer
+          readOnly: true
         empresaEpysa:
           description: "Rut empresa del holding Epysa (cliente), que puede ser: 763519872,\
             \ 778248700, 778690403, 776762806, 76700320K, o sus respectivos identificadores:\
             \  ServiBus, EpysaBuses, MundoBuses, EpysaEquipos, Service."
           type: string
         otEpysa:
-          description: Número de OT de Epysa. OT interna de epysa que mandata el trabajo
+          description: "Número de OT de Epysa. OT interna de epysa que mandata el\
+            \ trabajo. Permite identificar el vehículo al que se le realizarán los\
+            \ trabajos. Si no es un trabajo a un vehiculo, informar con valor -1.\
+            \ De aquí se obtiene el número de chasis y de carro cuando corresponda."
           type: integer
         imagenes:
           description: "Lista de las URL de las imagenes asociadas a la cabecera del\
@@ -158,13 +164,19 @@ components:
         chasis:
           description: Identificador del chasis vehiculo que se le realizará el trabajo
           type: string
+          readOnly: true
         carroceria:
           description: Identificador de la carrocería del vehiculo que se le realizará
             el trabajo
           type: string
+          readOnly: true
         fechaCreado:
           format: date-time
           description: Fecha de creación del o emisón del documento origen del proveedor
+          type: string
+        clasificacion:
+          description: Clasificacion de los trabajos. Permitirá parametrizar la tabla
+            de precios.
           type: string
       example:
         estado: INI
@@ -237,6 +249,7 @@ components:
         totalPesos:
           description: Usuario responsable del trabajo o creador del documento.
           type: integer
+          readOnly: false
         empresaEpysa:
           description: "Empresa del holding Epysa, que puede ser: ServiBus, EpysaBuses,\
             \ MundoBuses, EpysaEquipos, Service."
@@ -259,14 +272,6 @@ components:
           format: date-time
           description: Fecha de ingreso del presupuesto al sistema epysa
           type: string
-        carroceria:
-          description: Identificador de la carrocería del vehículo al que se le realizará
-            el trabajo
-          type: string
-        chasis:
-          description: 'Identificador del chasis del vehículo en que se realizará
-            el trabajo. '
-          type: string
         kilometrajeVehiculo:
           description: Kilometraje que tiene el vehículo al realizar el presupuesto.
           type: integer
@@ -277,6 +282,10 @@ components:
         fechaCreado:
           format: date-time
           description: Fecha de creación del o emisón del documento origen del proveedor
+          type: string
+        clasificacion:
+          description: Clasificación de los trabajos. Permitirá agregar un parametrización
+            a la lista de precios.
           type: string
       example:
         estado: INI
